@@ -21,14 +21,9 @@ PID CM2SpeedPID = CM_SPEED_PID_DEFAULT;
 PID CM3SpeedPID = CM_SPEED_PID_DEFAULT;
 PID CM4SpeedPID = CM_SPEED_PID_DEFAULT;
 
-void InputModeCtrl(void)
+void CMSpeedCtrl(void)
 {
-	
-}
-
-void CMCtrlLoop(void)
-{
-	static const float conv = 0.15f;
+	static const float conv = 0.2f;
 	
 	CM1SpeedPID.ref = -CMSpeed.fb*conv + CMSpeed.lr*conv + CMSpeed.rt*conv;
 	CM2SpeedPID.ref =  CMSpeed.fb*conv + CMSpeed.lr*conv + CMSpeed.rt*conv;
@@ -51,17 +46,25 @@ void CMCtrlLoop(void)
 void FanStateCtrl(void)
 {
 	if(fanState == ON)
-		SET_FAN_SPEED(1600);
+		FAN_ON();
 	else
-		SET_FAN_SPEED(1000);
+		FAN_OFF();
 }
 
-void ClawStateCtrl(void)
+void AirStateCtrl(void)
 {
-	if(clawState == ON)
-		SET_CLAW_SPEED(1600);
+	if(airState == ON)
+		AIR_ON();
 	else
-		SET_CLAW_SPEED(1000);
+		AIR_OFF();
+}
+
+void BinStateCtrl(void)
+{
+	if(binState == ON)
+		BIN_ON();
+	else
+		BIN_OFF();
 }
 
 static uint32_t ms_tick = 0;
@@ -69,11 +72,12 @@ void OutputTask(void)
 {
 	ms_tick++;
 	
-	CMCtrlLoop();
+	CMSpeedCtrl();
 	if(ms_tick % 2 == 0)
 	{
 		FanStateCtrl();
-		ClawStateCtrl();
+		AirStateCtrl();
+		BinStateCtrl();
 	}
 }
 

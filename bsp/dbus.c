@@ -26,6 +26,7 @@ void RC_ENC(RC* rc, uint8_t* buf)
 	buf[4] = (rc->ch3<<1) | (rc->ch2>>10);
 	buf[5] = (rc->s2<<6) | (rc->s1<<4) | (rc->ch3>>7);
 }
+
 void RC_DEC(RC* rc, uint8_t* buf)
 {
 	rc->ch0 = (buf[0] | (buf[1] << 8)) & 0x07ff;          //!< Channel 0  

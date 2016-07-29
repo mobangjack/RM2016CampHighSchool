@@ -17,7 +17,7 @@
 #ifndef __OUTPUT_TASK_H__
 #define __OUTPUT_TASK_H__
 
-//#include "pid.h"
+#include "pid.h"
 
 #define CM_SPEED_PID_DEFAULT \
 {\

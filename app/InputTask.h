@@ -17,48 +17,59 @@
 #ifndef __INPUT_TASK_H__
 #define __INPUT_TASK_H__
 
+#include <stdint.h>
+
+#define ON 1
+#define OFF 0
+
 #define INPUT_CM_SPEED_COEFF 0.45f
+#define INPUT_GM_SPEED_COEFF 0.01f
+#define INPUT_LR_SPEED_DIR_COEFF -1
+#define INPUT_FB_SPEED_DIR_COEFF -1
+#define INPUT_RT_SPEED_DIR_COEFF 1
+#define INPUT_ARM_SPEED_DIR_COEFF 1
+#define INPUT_WRIST_SPEED_DIR_COEFF 1
+#define INPUT_CLAW_SPEED_DIR_COEFF 1
 
-#define INPUT_SPEED_LR_DIR_COEFF -1
-#define INPUT_SPEED_FB_DIR_COEFF -1
-#define INPUT_SPEED_RT_DIR_COEFF 1
+#define SWITCH_ACTION_3TO1 (1<<2 | 3)
+#define SWITCH_ACTION_1TO3 (3<<2 | 1)
+#define SWITCH_ACTION_3TO2 (2<<2 | 3)
+#define SWITCH_ACTION_2TO3 (3<<2 | 2)
+#define SWITCH_ACTION_NONE 0
 
-typedef enum InputMode
+typedef enum
 {
-	INPUT_MODE_STOP  = 0x00,
-	INPUT_MODE_LOCAL = 0x01,
-	INPUT_MODE_RELAY = 0x02,
-}InputMode;
+	WORKING_STATE_MOVING = 0x00,
+	WORKING_STATE_GRABBING = 0x01,
+}WorkingState;
 
-typedef struct CMSpeedRef
+typedef struct
 {
 	float fb;
 	float lr;
 	float rt;
 }CMSpeedRef;
 
-typedef enum SwitchAction
+typedef struct
 {
-	SWITCH_ACTION_NOP  = 0x00,
-	SWITCH_ACTION_3TO1 = 0x01,
-	SWITCH_ACTION_1TO3 = 0x02,
-	SWITCH_ACTION_3TO2 = 0x04,
-	SWITCH_ACTION_2TO3 = 0x08,
-}SwitchAction;
+	float arm;
+	float wrist;
+	float claw;
+}GMSpeedRef;
 
-typedef enum FuncState
-{
-	OFF = 0,
-	ON = !OFF,
-}FuncState;
+typedef uint8_t SwitchAction;
+
+typedef uint8_t FuncState;
 
 void InputTask(void);
 
-extern InputMode inputMode;
+extern WorkingState workingState;
 extern CMSpeedRef CMSpeed;
+extern GMSpeedRef GMSpeed;
 extern SwitchAction S1Action;
 extern SwitchAction S2Action;
 extern FuncState fanState;
-extern FuncState clawState;
+extern FuncState airState;
+extern FuncState binState;
 
 #endif

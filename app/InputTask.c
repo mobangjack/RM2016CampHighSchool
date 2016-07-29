@@ -16,61 +16,55 @@
  
 #include "main.h"
 
-InputMode inputMode = INPUT_MODE_STOP;
-CMSpeedRef CMSpeed = {0, 0, 0};
-SwitchAction S1Action = SWITCH_ACTION_NOP;
-SwitchAction S2Action = SWITCH_ACTION_NOP;
+WorkingState workingState = WORKING_STATE_MOVING;
+CMSpeedRef CMSpeed = {0};
+GMSpeedRef GMSpeed = {0};
+SwitchAction S1Action = SWITCH_ACTION_NONE;
+SwitchAction S2Action = SWITCH_ACTION_NONE;
 FuncState fanState = OFF;
-FuncState clawState = OFF;
+FuncState airState = OFF;
+FuncState binState = OFF;
 
-void GetInputMode()
+void GetWorkingState(void)
 {
-	if(dbus.rc.s2 == SW_MD)
-		inputMode = INPUT_MODE_LOCAL;
-	else if(dbus.rc.s2 == SW_UP)
-		inputMode = INPUT_MODE_RELAY;
+	if(dbus.rc.s2 == SW_UP)
+		workingState = WORKING_STATE_GRABBING;
 	else
-		inputMode = INPUT_MODE_STOP;
+		workingState = WORKING_STATE_MOVING;
 }
 
-void GetCMSpeed()
+void GetCMSpeed(void)
 {
-	CMSpeed.lr = (dbus.rc.ch0 - CH_MID) * INPUT_CM_SPEED_COEFF * INPUT_SPEED_LR_DIR_COEFF;
-	CMSpeed.fb = (dbus.rc.ch1 - CH_MID) * INPUT_CM_SPEED_COEFF * INPUT_SPEED_FB_DIR_COEFF;
-	CMSpeed.rt = (dbus.rc.ch2 - CH_MID) * INPUT_CM_SPEED_COEFF * INPUT_SPEED_RT_DIR_COEFF;
+	if(workingState == WORKING_STATE_MOVING)
+	{
+		CMSpeed.lr = (dbus.rc.ch0 - CH_MID) * INPUT_CM_SPEED_COEFF * INPUT_LR_SPEED_DIR_COEFF;
+		CMSpeed.fb = (dbus.rc.ch1 - CH_MID) * INPUT_CM_SPEED_COEFF * INPUT_FB_SPEED_DIR_COEFF;
+		CMSpeed.rt = (dbus.rc.ch2 - CH_MID) * INPUT_CM_SPEED_COEFF * INPUT_RT_SPEED_DIR_COEFF;
+	}
+	else
+	{
+		CMSpeed.rt = (dbus.rc.ch0 - CH_MID) * INPUT_CM_SPEED_COEFF * INPUT_RT_SPEED_DIR_COEFF;
+		CMSpeed.fb = CMSpeed.lr = 0;
+	}
+}
+
+void GetGMSpeed(void)
+{
+	if(workingState == WORKING_STATE_GRABBING)
+	{
+		GMSpeed.arm   = (dbus.rc.ch1 - CH_MID) * INPUT_GM_SPEED_COEFF * INPUT_ARM_SPEED_DIR_COEFF;
+		GMSpeed.wrist = (dbus.rc.ch3 - CH_MID) * INPUT_GM_SPEED_COEFF * INPUT_WRIST_SPEED_DIR_COEFF;
+		GMSpeed.claw  = (dbus.rc.ch2 - CH_MID) * INPUT_GM_SPEED_COEFF * INPUT_CLAW_SPEED_DIR_COEFF;
+	}
+	else
+	{
+		GMSpeed.arm = GMSpeed.wrist = GMSpeed.claw = 0;
+	}
 }
 
 SwitchAction ActionSM(uint8_t thisState, uint8_t lastState)
 {
-	switch(lastState)
-	{
-		case SW_MD:
-			if(thisState == SW_MD)
-				return SWITCH_ACTION_NOP;
-			if(thisState == SW_UP)
-				return SWITCH_ACTION_3TO1;
-			if(thisState == SW_DN)
-				return SWITCH_ACTION_3TO2;
-			return SWITCH_ACTION_NOP;
-		case SW_UP:
-			if(thisState == SW_MD)
-				return SWITCH_ACTION_1TO3;
-			if(thisState == SW_UP)
-				return SWITCH_ACTION_NOP;
-			if(thisState == SW_DN)
-				return SWITCH_ACTION_NOP;
-			return SWITCH_ACTION_NOP;
-		case SW_DN:
-			if(thisState == SW_MD)
-				return SWITCH_ACTION_2TO3;
-			if(thisState == SW_UP)
-				return SWITCH_ACTION_NOP;
-			if(thisState == SW_DN)
-				return SWITCH_ACTION_NOP;
-			return SWITCH_ACTION_NOP;
-		default:
-			return SWITCH_ACTION_NOP;
-	}
+	return ((thisState << 2) | lastState);
 }
 
 void GetSwitchAction()
@@ -87,19 +81,46 @@ void GetSwitchAction()
 
 void GetFanState()
 {
-	fanState = (S1Action == SWITCH_ACTION_3TO1) ? (!fanState) : fanState;
+	if(workingState == WORKING_STATE_MOVING)
+	{
+		fanState = OFF;
+	}
+	else
+	{
+		fanState = (S1Action == SWITCH_ACTION_3TO1) ? (!fanState) : fanState;
+	}
 }
 
-void GetClawState()
+void GetAirState()
 {
-	clawState = (S1Action == SWITCH_ACTION_3TO2) ? (!clawState) : clawState;
+	if(workingState == WORKING_STATE_MOVING)
+	{
+		airState = OFF;
+	}
+	else
+	{
+		airState = (S1Action == SWITCH_ACTION_3TO2) ? (!airState) : airState;
+	}
+}
+
+void GetBinState(void)
+{
+	if(workingState == WORKING_STATE_MOVING)
+	{
+		binState = OFF;
+	}
+	else
+	{
+		binState = (S2Action == SWITCH_ACTION_3TO2) ? (!binState) : binState;
+	}
 }
 
 void InputTask(void)
 {
-	GetInputMode();
-	GetCMSpeed();
 	GetSwitchAction();
+	GetWorkingState();
+	GetCMSpeed();
 	GetFanState();
-	GetClawState();
+	GetAirState();
+	GetBinState();
 }
