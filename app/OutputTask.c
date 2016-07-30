@@ -23,7 +23,7 @@ PID CM4SpeedPID = CM_SPEED_PID_DEFAULT;
 
 void CMSpeedCtrl(void)
 {
-	static const float conv = 0.2f;
+	static const float conv = 0.15f;
 	
 	CM1SpeedPID.ref = -CMSpeed.fb*conv + CMSpeed.lr*conv + CMSpeed.rt*conv;
 	CM2SpeedPID.ref =  CMSpeed.fb*conv + CMSpeed.lr*conv + CMSpeed.rt*conv;
